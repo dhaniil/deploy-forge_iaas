@@ -6,86 +6,72 @@ class NodeDeployer(BaseDeployer):
         super().__init__(ssh_manager)
 
     def install_dependencies(self) -> bool:
-        """Menginstall Node.js dan npm"""
+        """Menginstall Node.js dan npm menggunakan NVM"""
+        # Cek versi Node.js dulu
+        stdout, stderr = self.ssh.execute_command('node --version')
+        if stdout.strip():
+            print(f"Node.js sudah terinstall: {stdout.strip()}")
+            return True
+
+        # Jika belum terinstall, install menggunakan NVM
         commands = [
-            "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -",
-            "sudo apt-get install -y nodejs",
-            "sudo npm install -g npm@latest"
+            'curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash',
+            'export NVM_DIR="$HOME/.nvm"',
+            '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"',
+            'nvm install --lts',
+            'nvm use --lts'
         ]
         
         for cmd in commands:
-            if not self._run_command(cmd):
+            stdout, stderr = self.ssh.execute_command(cmd)
+            print(f"Menjalankan: {cmd}")
+            print(f"Output: {stdout}")
+            if stderr:
+                print(f"Error: {stderr}")
                 return False
         return True
 
     def setup_project(self, project_name: str) -> bool:
         """Membuat proyek Node.js baru"""
         commands = [
-            f"mkdir {project_name}",
-            f"cd {project_name}",
-            "npm init -y",
-            "npm install express dotenv",
-            # Membuat file server sederhana
-            f"""echo 'const express = require("express");
+            # Buat direktori proyek
+            f'mkdir -p {project_name}',
+            
+            # Inisialisasi proyek npm
+            f'''cd {project_name} && npm init -y && 
+            npm install express && 
+            echo 'const express = require("express");
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 
 app.get("/", (req, res) => {{
   res.send("Hello from Node.js!");
 }});
 
-app.listen(port, () => {{
-  console.log(`Server running at http://localhost:${{port}}`);
-}});' > index.js"""
+app.listen(port, "0.0.0.0", () => {{
+  console.log(`Server running at http://0.0.0.0:${{port}}`);
+}});' > index.js'''
         ]
         
         for cmd in commands:
-            if not self._run_command(cmd):
+            print(f"Menjalankan: {cmd}")
+            stdout, stderr = self.ssh.execute_command(cmd, wait_time=10)
+            print(f"Output: {stdout}")
+            if stderr:
+                print(f"Error: {stderr}")
                 return False
+                
         return True
 
     def deploy(self, project_name: str) -> bool:
-        """Mendeploy proyek Node.js"""
-        commands = [
-            f"cd {project_name}",
-            # Install PM2 untuk process management
-            "sudo npm install -g pm2",
-            f"pm2 start index.js --name {project_name}"
-        ]
+        """Menjalankan proyek Node.js"""
+        run_cmd = f'cd {project_name} && node index.js'
         
-        for cmd in commands:
-            if not self._run_command(cmd):
-                return False
-        
-        # Setup Nginx sebagai reverse proxy
-        nginx_config = f"""
-server {{
-    listen 80;
-    server_name _;
-
-    location / {{
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }}
-}}
-"""
-        
-        # Menyimpan konfigurasi Nginx
-        if not self._run_command(f"echo '{nginx_config}' | sudo tee /etc/nginx/sites-available/{project_name}"):
+        print(f"Menjalankan: {run_cmd}")
+        stdout, stderr = self.ssh.execute_command(run_cmd)
+        print(f"Output: {stdout}")
+        if stderr:
+            print(f"Error: {stderr}")
             return False
             
-        nginx_commands = [
-            f"sudo ln -s /etc/nginx/sites-available/{project_name} /etc/nginx/sites-enabled/",
-            "sudo nginx -t",
-            "sudo systemctl restart nginx"
-        ]
-        
-        for cmd in nginx_commands:
-            if not self._run_command(cmd):
-                return False
-                
         return True
