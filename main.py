@@ -3,7 +3,7 @@ from src.ui.pages.frameworks import show_framework_page
 
 def main():
     st.set_page_config(
-        page_title="Framework Deployer",
+        page_title="DeployForge",
         page_icon="🚀",
         layout="wide",
         initial_sidebar_state="expanded"

@@ -2,10 +2,12 @@ import streamlit as st
 from typing import Dict, Type
 import logging
 
+from src.config import DEPLOYERS
+from src.utils.ssh_manager import SSHManager
 from src.deployers.base_deployer import BaseDeployer
 from src.deployers.next_deployer import NextDeployer
 from src.deployers.node_deployer import NodeDeployer
-from src.utils.ssh_manager import SSHManager
+from src.deployers.laravel_deployer import LaravelDeployer
 from src.ui.forms import ssh_form, framework_form
 
 # Setup logging
@@ -34,7 +36,7 @@ def show_logs():
 
 def show_framework_page():
     """Menampilkan halaman utama deployer framework"""
-    st.title("🚀 Framework Deployer")
+    st.title("🚀 Deploy Forge")
     st.markdown("""
     Aplikasi ini membantu Anda mendeploy berbagai framework ke server remote melalui SSH.
     
@@ -76,10 +78,7 @@ def show_framework_page():
         
         if framework and project_name:
             status_container = st.empty()
-            deployers: Dict[str, Type[BaseDeployer]] = {
-                "Next.js": NextDeployer,
-                "Node.js": NodeDeployer
-            }
+            deployers = DEPLOYERS
             
             if st.session_state.deployer is None:
                 st.session_state.deployer = deployers[framework](st.session_state.ssh)

@@ -1,6 +1,7 @@
 import streamlit as st
 from dataclasses import dataclass
 from typing import Optional
+from src.config import DEPLOYERS
 
 @dataclass
 class SSHCredentials:
@@ -45,11 +46,12 @@ def framework_form():
     
     framework = st.selectbox(
         "Framework",
-        options=["Next.js", "Node.js"],
+        options=DEPLOYERS.keys(),
         format_func=lambda x: {
             "Next.js": "Next.js - React Framework",
-            "Node.js": "Node.js - JavaScript Runtime"
-        }[x]
+            "Node.js": "Node.js - JavaScript Runtime",
+            "Laravel": "Laravel - PHP Framework"
+        }.get(x, x)
     )
     
     project_name = st.text_input(
