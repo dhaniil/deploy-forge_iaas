@@ -1,8 +1,7 @@
-# 🚀 Deploy Forge IAAS
+# 🚀 Deploy Forge ( One Click Deploy your Favourite Framework )
 
 Aplikasi berbasis Streamlit untuk deploy framework web ke server melalui SSH secara otomatis.
 
-![Deploy Forge Screenshot](https://via.placeholder.com/800x500.png?text=Deploy+Forge+Screenshot)
 
 ## 📋 Prasyarat
 - Python 3.8+
